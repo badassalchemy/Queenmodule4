@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quantum Queen · Module 4 — Quantum Jumping</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;width:100%;font-family:'Montserrat',sans-serif;background:#1F1320;color:#EDD8E5;overflow:hidden}
+  #root{height:100vh;width:100vw}
+  ::-webkit-scrollbar{height:3px;width:4px}
+  ::-webkit-scrollbar-thumb{background:rgba(181,123,174,0.32);border-radius:2px}
+  textarea{font-family:'Montserrat',sans-serif;font-weight:500}
+  button{font-family:'Montserrat',sans-serif;outline:none}
+  @keyframes fadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes expandIn{0%{opacity:0;max-height:0}100%{opacity:1;max-height:5000px}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(181,123,174,0.4)}50%{box-shadow:0 0 0 8px rgba(181,123,174,0)}}
+  .lesson-content{animation:fadeIn .3s ease both}
+  .expand-content{animation:expandIn .35s ease both;overflow:hidden}
+  .pulse{animation:pulseGlow 2s ease-in-out infinite}
+  @media(max-width:768px){
+    .desktop-only{display:none!important}
+    .mobile-only{display:flex!important}
+    .sidebar{position:absolute!important;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform .25s ease}
+    .sidebar.open{transform:translateX(0)}
+    .main-inner{padding:24px 20px 80px!important}
+    .lesson-top{flex-direction:column;gap:8px!important}
+    .lesson-bottom{flex-direction:column;align-items:stretch!important}
+    .lesson-bottom button{width:100%}
+    .tracker-grid{grid-template-columns:repeat(7,1fr)!important}
+  }
+  @media(min-width:769px){.mobile-only{display:none!important}}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#1F1320;color:#B57BAE;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;z-index:9999;flex-direction:column;gap:12px}
+  .spinner{width:32px;height:32px;border:2px solid rgba(181,123,174,0.2);border-top-color:#B57BAE;border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><div>✦ Loading your Quantum Queen…</div></div>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.0/babel.min.js"></script>
+
+<script type="text/babel">
+const e = React.createElement;
+const { useState, useEffect } = React;
+
+const MAUVE_LIGHT = "#B57BAE";
+const MAUVE_DEEP = "#6E3865";
+const BRAND_GRAD = "linear-gradient(135deg, " + MAUVE_LIGHT + " 0%, " + MAUVE_DEEP + " 100%)";
+const SIDEBAR_IMG = "https://raw.githubusercontent.com/badassalchemy/imageassets/main/mainbackground1.jpg";
+
+const DARK = {
+  bg: "#1F1320", bgCard: "#2A1A2D", darkMid: MAUVE_DEEP,
+  accent: MAUVE_DEEP, accentLt: MAUVE_LIGHT, detail: "#C99CC1",
+  moonPrl: "#FAEFF4", txt: "#FAEFF4", txtSec: "#EDD8E5",
+  txtMuted: "#C9A8BE", txtFaded: "#9B7090",
+  border: "rgba(181,123,174,0.18)", borderMid: "rgba(181,123,174,0.32)",
+  inputBg: "#160C18", shadow: "0 4px 20px rgba(45,15,35,0.4)"
+};
+
+const LIGHT = {
+  bg: "#FBF5F8", bgCard: "#FFFFFF", darkMid: MAUVE_DEEP,
+  accent: MAUVE_DEEP, accentLt: MAUVE_LIGHT, detail: MAUVE_LIGHT,
+  moonPrl: "#FFFFFF", txt: "#3A1E33", txtSec: "#5A2F4E",
+  txtMuted: "#7A4A6C", txtFaded: "#A87A9A",
+  border: "rgba(110,56,101,0.12)", borderMid: "rgba(110,56,101,0.22)",
+  inputBg: "#FBF5F8", shadow: "0 4px 20px rgba(110,56,101,0.1)"
+};
+
+const MODULE_DATA = {
+  title: "Module 4",
+  subtitle: "Quantum Jumping",
+  tagline: "You installed the identity. Now we go meet her — and bring her into the body.",
+  lessons: [
+    {
+      id: 0, title: "Welcome to Quantum Jumping", dur: "8-12 min", type: "video",
+      desc: "You just spent 21 days installing a new identity in your nervous system. Five declarations, written and rewritten until they stopped feeling foreign. That work was the rewiring. This module is the meeting. Because the woman you have been declaring yourself to be does not live in the future — she lives in a parallel timeline that is running right now, alongside the one you are currently inhabiting. She has already made the decisions you are still deliberating. She has already charged the prices you are still apologizing for. She has already walked away from the rooms you are still tolerating. And the only thing standing between you and her is a frequency match.",
+      desc2: "Quantum jumping is not magical thinking. It is not pretending. It is the deliberate practice of locating the version of yourself who already has what you want — and collapsing the timeline between you. You do that through three things: clarity, embodiment, and behavior. This module gives you all three. You will get grounded in what is already real. You will excavate what you are actually here to do. You will meet her on the page — through portrait and letter. And then you will bring her into your week, your morning, your body. By the end of this module she will not be a vision. She will be the woman moving your hands.",
+      takeaways: [
+        "Quantum jumping is not visualization. It is identification — collapsing the distance between who you are being and who you have already declared yourself to be.",
+        "Your future self is not a fantasy. She is a frequency. And frequency is something your body can practice, not something your mind has to believe.",
+        "The leap does not happen in your head. It happens in your behavior. You do not think your way into a new identity. You move as her until your body forgets how to be anyone else.",
+        "Grounding comes first. The women who try to leap before they are rooted end up dissociating, not transforming. We are not bypassing your current reality. We are expanding it."
+      ],
+      actions: [
+        "Watch the Module 4 welcome video inside the Skool classroom.",
+        "Pour something warm. Light a candle. This module asks you to imagine a woman you have not been allowed to imagine before.",
+        "If anywhere in this work you feel the impulse to dismiss her as 'too much' or 'not me yet' — write the impulse down. That is the voice of the old identity, and we are going to walk her out of the room."
+      ]
+    },
+    {
+      id: 1, title: "The 5 Constants — Grounding the Leap", dur: "15-20 min", type: "journals",
+      desc: "Before we expand the vision, we get grounded in the foundation. This is the lesson most women want to skip — and the one that makes the difference between a quantum jump and a quantum dissociation. The women who try to leap without grounding end up chasing a fantasy. They abandon their present life as 'not enough' and they reach for a future life that has no roots to grow from. The leap collapses because there was nothing underneath it.",
+      desc2: "So before we go anywhere — we name what is already real. The five constant things in your life right now. The people, the practices, the truths, the structures that are stable, present, and already yours. This is not gratitude bypassing. This is not 'find the silver lining.' This is locating the floor you are leaping FROM so the leap has something to push against.",
+      takeaways: [
+        "You cannot quantum jump from a place of self-abandonment. The leap requires a launch pad.",
+        "What is constant in your life right now is not a consolation prize. It is the proof that you can hold reality. That capacity is what makes you ready to expand it.",
+        "The women who manifest cleanly are not the ones who hate where they are. They are the ones who can stand fully inside their current reality and still know there is more.",
+        "Naming what is already real makes the new vision believable to your nervous system. Without the floor, the vision floats. With the floor, it lands."
+      ],
+      actions: [
+        "Move through each prompt slowly. These are not throwaway answers. Each constant is a witness to who you already are.",
+        "Notice if you want to dismiss anything as 'not enough' or 'not impressive.' That is the old identity. Constants do not have to be impressive. They have to be true.",
+        "Save your answers. You will come back to them at the end of the module — and again at the end of the program — to see what stayed constant and what evolved."
+      ],
+      journals: [
+        { id: "constant-1", prompt: "What is the first constant in your life right now? A person, a place, a practice, a relationship, a structure — something that has been stable and present and that you can count on. Name it. Then write what it gives you that nothing else does." },
+        { id: "constant-2", prompt: "What is the second constant? Push past the obvious answer. This one might be something you have not given credit to — a habit, a daily ritual, a quiet truth about yourself. What is here that you have been overlooking?" },
+        { id: "constant-3", prompt: "What is the third constant? Consider your body. Your home. Your morning. Your nervous system. What is the thing inside you or around you that has not abandoned you — even when you abandoned yourself?" },
+        { id: "constant-4", prompt: "What is the fourth constant? This one is about who you are. Not what you do. A quality, a way of being, a thing about you that has been true since you were small and that no amount of life has been able to take from you. Name her." },
+        { id: "constant-5", prompt: "What is the fifth constant? The one that surprises you to write. The one you almost did not include because you did not think it counted. Write it anyway. The constants you minimize are often the most powerful." }
+      ]
+    },
+    {
+      id: 2, title: "Life Purpose Excavation", dur: "20-30 min", type: "journals",
+      desc: "Now that you are grounded, we excavate. Before you can meet the future version of yourself, you have to know what she is here to do. Not what you have been told to do. Not what looks impressive on a resume. Not what your mother, your industry, or your old identity told you was acceptable. What you — the actual woman underneath all of it — are here to build, give, create, lead, and become. This is the raw material of the Future Self Portrait you are about to write. The clearer this becomes, the more vivid she becomes.",
+      desc2: "Do not try to answer perfectly. Try to answer honestly. Most women have been so trained to perform purpose that they forget what their actual purpose feels like in the body. Purpose, when it is real, feels like relief. Like remembering. Like finally being allowed to say the thing you have been swallowing for years. Watch for that feeling as you write. When it shows up — slow down. That is the doorway.",
+      takeaways: [
+        "Purpose is not a job title. It is a frequency you carry into whatever you do.",
+        "What you naturally lose time doing is not a hobby. It is a clue.",
+        "The thing people consistently come to you for is the thing you were designed to give. Stop dismissing it as 'something everyone can do.' If everyone could do it, they would not be coming to you for it.",
+        "The version of your life that feels fully lived is not selfish to want. It is the assignment."
+      ],
+      actions: [
+        "Answer each question with the part of you that is not trying to be reasonable.",
+        "When you notice yourself editing for what sounds professional or socially acceptable — stop and write the unedited version underneath.",
+        "When you finish, read everything back. Underline the one or two sentences that made your chest tighten or your eyes water. Those are the truth. The rest is decoration."
+      ],
+      journals: [
+        { id: "purpose-1", prompt: "What are the things you do that make you completely lose track of time? Not the things you wish you lost track of doing. The actual ones. Describe what you are doing, where you are, and what state you are in when it happens." },
+        { id: "purpose-2", prompt: "What do people consistently come to you for? What do they thank you for? What do they tell you that you do better than anyone they know? Stop dismissing the answers. Write them down." },
+        { id: "purpose-3", prompt: "If money were not a factor and failure were not possible — what would you actually be doing with your days? Be specific. Not 'travel.' What would you be building, creating, leading, teaching, giving? Who would you be doing it for and why does it matter that it be you who does it?" },
+        { id: "purpose-4", prompt: "What impact do you want to have on the world before you leave it? Not legacy in the abstract. Specifically — who do you want to have changed something for? What do you want to have moved, shifted, made possible, made permissible for the women coming behind you?" },
+        { id: "purpose-5", prompt: "What does a life that feels fully lived look like to you? Walk through a day in it. The light, the room, the people, the work, the body, the bank account, the silence, the sound. Describe it like a scene from a film you are already starring in." }
+      ]
+    },
+    {
+      id: 3, title: "The Future Self Portrait", dur: "30-40 min", type: "journals",
+      desc: "She already exists. Right now — in a parallel timeline running alongside this one — the version of you who has built the life is awake, in her body, in her day. She is not a fantasy. She is a frequency. And in this lesson, we are going to bring her into focus. The guided meditation inside the Skool classroom will walk you into her. This page is where you bring her out. You are going to describe her so specifically that your nervous system stops being able to tell the difference between her and you.",
+      desc2: "Specificity is the practice. Most vision work fails because it stays vague. 'I am wealthy.' 'I am free.' 'I am in love.' Your nervous system cannot rehearse vague. It can only rehearse specific. So we get granular. The thread count of her sheets. The way she opens a difficult email. What she orders at the restaurant without scanning the prices. The way she holds her mouth when someone tries to make her smaller. The portrait is not a wish list. It is a rehearsal.",
+      takeaways: [
+        "Vague vision is a wish. Specific vision is a rehearsal. Your nervous system can only embody what it can locate.",
+        "She is not better than you. She is more of you. The parts you have not been allowed to be yet.",
+        "Notice what feels just out of reach as you write. That is the growth edge. Lean toward it.",
+        "If you cannot picture her at all — slow down. The block is not in your imagination. It is in your permission. Write what you are not allowed to want first."
+      ],
+      actions: [
+        "Watch the Future Self Portrait guided meditation inside the Skool classroom before you write. Do not skip it. The meditation is what lets your body locate her — the writing is what brings her out.",
+        "Write in present tense. 'She is.' 'She does.' 'She has.' Not 'she will.' Future tense keeps her in the future. Present tense brings her into the room.",
+        "When you finish, read it out loud. Slowly. Out loud is how it lands in the body."
+      ],
+      journals: [
+        { id: "portrait-1", prompt: "Who is she? Not her job. Who is she as a woman. The frequency she carries when she walks into a room. The way people respond to her without her saying anything. The quality of her presence. Describe her in three to five sentences as if you were describing your favorite woman in the world." },
+        { id: "portrait-2", prompt: "What does her morning look like? Walk through it from the moment her eyes open. Where is she. Who is next to her or not next to her. What does she reach for first. What does she not reach for. What is the light like in her room. What is the first thing she says to herself." },
+        { id: "portrait-3", prompt: "What does her work look like? What is she building. Who is she serving. How is she charging. How does she feel about her work — is it heavy, is it light, is it sacred, is it play. Describe a typical work day for her in detail." },
+        { id: "portrait-4", prompt: "What does her body look and feel like? Not aesthetics. The way she lives inside it. Her relationship to food, movement, rest, sensuality. How she takes up space. How she carries herself in public. The way she touches her own face when no one is watching." },
+        { id: "portrait-5", prompt: "What is her relationship to money? How does she speak about it. How does she spend. How does she receive. What does she allow herself without flinching that you currently do not. What is the number in her account that lets her sleep deeply. What does she know about money that you do not yet." },
+        { id: "portrait-6", prompt: "What are her relationships like? Who is in her inner circle. Who is no longer there. What is her romantic life. How does she love. How does she let herself be loved. What does she require from intimacy that she did not used to know she could ask for." },
+        { id: "portrait-7", prompt: "What does she know — without needing anyone to confirm it — that you are still building the courage to know? Write five things she knows. Bold. Present tense. As her. Not as a list of beliefs. As truths she operates from." }
+      ]
+    },
+    {
+      id: 4, title: "The Quantum Letter", dur: "45-60 min", type: "quantumLetter",
+      desc: "Now she writes to you. This is the most important exercise in this module — because for the first time, the future self stops being someone you are trying to become and becomes someone who is reaching back to find you. You are going to drop into her frequency and let her write you a letter. From her timeline to yours. From her body to yours. From her life to the life you are in right now. This is not journaling. This is reception. You are going to sit down, get still, and let her speak.",
+      desc2: "Some women feel her clearly the first time. Some women have to write past their own resistance for a page or two before her voice comes through. Both are normal. The trick is to keep writing even when it feels like you are making it up. The version of you who is making it up and the version of you who is her are the same woman. Trust what arrives. After you write, you will reflect on what she said — and choose the one thing from her letter you are going to act on this week. The letter is the message. The action is the proof.",
+      takeaways: [
+        "She is not separate from you. She is a part of you that has been waiting for permission to speak.",
+        "The voice that says 'I am just making this up' is the same voice that has kept you small. Write past her.",
+        "What surprised you in the letter is more important than what confirmed what you already thought. The surprises are the messages.",
+        "A letter you do not act on is a letter you did not believe. Choose one action. Make it real this week."
+      ],
+      actions: [
+        "Get still before you write. Three deep breaths. Eyes closed. Drop into her body, not yours.",
+        "Write the letter in her voice — as if she is writing to you. 'I want you to know.' 'I see you.' 'I am proud of you for.' 'I need you to stop.'",
+        "Do not edit while you write. Edit after. The first draft is the reception. The clean-up is afterward."
+      ],
+      quantumLetter: {
+        letterField: {
+          id: "letter-body",
+          prompt: "Write the letter. From her, to you. Date it. Address it. Sign it. Let her say what she came here to say.",
+          placeholder: "Dear [your name],\n\nI want you to know..."
+        },
+        reflectionFields: [
+          { id: "letter-r1", prompt: "What did she say that surprised you? The line you did not expect to write. The thing you almost edited out. Write it here." },
+          { id: "letter-r2", prompt: "What did she say that you already knew but needed permission to believe? Name the thing you have been waiting for someone to confirm." },
+          { id: "letter-r3", prompt: "What is the one thing from her letter you are going to act on this week? Be specific. Not 'be more confident.' Something you can do, send, ask for, charge, walk away from, or claim — by Sunday." }
+        ]
+      }
+    },
+    {
+      id: 5, title: "The Identity Swap — A 7-Day Experiment", dur: "7 days", type: "identitySwap",
+      desc: "Now we bring her into your behavior. The portrait was who she is. The letter was what she had to say. The Identity Swap is where you stop describing her and start moving as her. For one week. In one specific area of your life. You are going to act as if the new identity is already true — not in your head, in your actual choices. The way you speak in a meeting. The price you quote. The text you do not send. The text you do send. The room you walk away from. The way you order coffee.",
+      desc2: "Pick one area. Just one. Do not try to swap your entire life at once — your nervous system will reject the upgrade. We are training her in. One area, seven days, then we evaluate. The point is not perfection. The point is data. By the end of the week you will know — viscerally, not theoretically — what it feels like to be her. And what it costs you to keep being the old version. That cost is what makes the next decision easy.",
+      takeaways: [
+        "Identity is not a feeling. Identity is a series of decisions repeated until your body forgets how to make any other kind.",
+        "You do not have to feel like her to act like her. The acting comes first. The feeling follows. This is the order, even though everyone teaches it backwards.",
+        "Pick the area where the gap between you and her is the most painful right now. That is where the swap will move the most.",
+        "Expect resistance from the people around you. They calibrated to the old version. The new version will be uncomfortable for them before it becomes inevitable for you."
+      ],
+      actions: [
+        "Choose ONE area below. Commit to it for the full seven days. Do not change midstream.",
+        "Every day, write one sentence about what acting as her looked like that day — and what it cost the old you to do it.",
+        "At the end of the week, complete the closing reflection. This is where the swap becomes integration, not just a one-week experiment."
+      ],
+      identitySwap: {
+        intro: "Pick the ONE area where you are still acting from the old identity. The most charged one. The one where the gap between you and her is the most painful right now.",
+        areaField: {
+          id: "swap-area",
+          prompt: "The ONE area I am swapping this week",
+          placeholder: "Example: My pricing. The way I show up on Instagram. The way I respond when my partner pulls away. The way I speak in client calls. The boundary I keep almost setting and then softening."
+        },
+        actAsHerField: {
+          id: "swap-actasher",
+          prompt: "What does acting as HER look like in this area? Be specific. Not 'be more confident.' What does she actually do that you currently do not?",
+          placeholder: "Example: She quotes the full price without softening it with extras. She does not over-explain. She lets the silence sit after she says the number."
+        },
+        oldIdentityField: {
+          id: "swap-oldid",
+          prompt: "What does the old identity do in this area? Name her behaviors specifically so you can catch her in real time.",
+          placeholder: "Example: I discount before they ask. I add a free hour. I say 'no pressure!' after the quote. I check my email three times for their reply."
+        },
+        dailyLog: [
+          { id: "swap-day-1", label: "Day 1 — Today, acting as her looked like:" },
+          { id: "swap-day-2", label: "Day 2 — Today, acting as her looked like:" },
+          { id: "swap-day-3", label: "Day 3 — Today, acting as her looked like:" },
+          { id: "swap-day-4", label: "Day 4 — Today, acting as her looked like:" },
+          { id: "swap-day-5", label: "Day 5 — Today, acting as her looked like:" },
+          { id: "swap-day-6", label: "Day 6 — Today, acting as her looked like:" },
+          { id: "swap-day-7", label: "Day 7 — Today, acting as her looked like:" }
+        ],
+        closingReflection: [
+          { id: "swap-close-1", prompt: "What shifted in your body, your business, or your relationships this week as a result of acting as her?" },
+          { id: "swap-close-2", prompt: "Where did you catch yourself reverting to the old identity? What did that pattern cost you in real terms — money, energy, time, self-respect?" },
+          { id: "swap-close-3", prompt: "What is the next area you are ready to swap? Write it down. You will return to this exercise throughout the program. The swap is the practice — for the rest of your life." }
+        ]
+      }
+    },
+    {
+      id: 6, title: "The Morning Transmission — 21 Days", dur: "21 days", type: "tracker",
+      desc: "This is where she becomes the woman moving your hands. Every morning — before you check your phone, before you speak to anyone, before the day begins — you are going to spend five minutes in her timeline. Five minutes is all it takes. This is not a meditation in the wellness-influencer sense. This is identity transmission. You are not trying to relax. You are not trying to manifest. You are tuning your frequency to hers — and letting your body practice being her — before the world has a chance to call you back to the old identity.",
+      desc2: "The mechanics are simple. The discipline is the practice. Stay lying down. Close your eyes. Three slow breaths. Then return — to her room, her body, her morning, her frequency. You do not need to see everything in detail every day. Just find the feeling. The dominant frequency of her timeline. The peace. The expansion. The pride. The ease. Breathe it in for five minutes. Then get up. And move as her for the rest of the day. The tracker below holds the streak. Twenty-one mornings. After that, she will not be a practice. She will be a default.",
+      takeaways: [
+        "Five minutes in her frequency at the start of the day is worth more than five hours of effort trying to act as her from the old frequency.",
+        "The morning belongs to whoever claims it first. If you claim it before your phone does — you are her. If you do not — you are whoever the algorithm tells you to be that day.",
+        "Missing a day is not failure. Punishing yourself for missing a day is. Skip the punishment. Pick the practice back up.",
+        "By Day 21 the transmission stops feeling like a practice and starts feeling like coming home. You will not have to remember to do it. Your body will remember for you."
+      ],
+      actions: [
+        "Set your phone to airplane mode before bed every night this week. The transmission only works if you reach her before you reach the screen.",
+        "Check off each day in the tracker after you complete your five minutes. Watch the streak build.",
+        "Each morning after, write one sentence in your journal: Today I am carrying the frequency of _______ into my day. Name the dominant feeling from the transmission.",
+        "On Day 21, complete the closing reflections. Then carry her into Module 5 — where we are going to set the standards she requires."
+      ],
+      practiceMethods: [
+        {
+          id: "transmission",
+          title: "The Morning Transmission Practice",
+          desc: "Stay lying down. Close your eyes. Three slow breaths. Return to her timeline — her room, her body, her morning. Find the dominant feeling of her frequency. Breathe it in for five full minutes. Then get up and move as her for the rest of the day."
+        },
+        {
+          id: "anchor",
+          title: "The Frequency Anchor Practice",
+          desc: "Choose one word that describes the dominant frequency of her timeline — peace, sovereignty, ease, magnetism, abundance, certainty. Write it where you will see it first thing — on your mirror, your phone lock screen, your bedside notebook. The word is the anchor. The five minutes is the activation."
+        },
+        {
+          id: "embodied",
+          title: "The Embodied Transmission Practice",
+          desc: "After your five minutes of stillness, stand up before you check anything. Place one hand on your chest, one on your belly. Say out loud: 'Today I am her.' Then move into your morning as the woman who just spoke."
+        }
+      ],
+      trackerReflectionFields: [
+        { id: "tx-week1", prompt: "End of Week 1 (Day 7): How did your mornings change this week? What was the dominant frequency you returned to most? Where in your day did her presence start to show up unsolicited?" },
+        { id: "tx-week2", prompt: "End of Week 2 (Day 14): What old morning patterns are starting to fall away? What is starting to feel familiar that used to feel foreign? Who are you becoming on the inside that no one has noticed on the outside yet?" },
+        { id: "tx-week3", prompt: "End of Week 3 (Day 21): Read your Future Self Portrait again. Then read it as her. What lines now feel obvious that used to feel like a stretch? Which line is the next edge you are ready to step into? Module 5 is where you set the standards she requires — write down the first standard you can feel her holding already." }
+      ]
+    }
+  ]
+};
+
+const STORAGE_KEY = "quantumqueen-module4-v1";
+
+function App() {
+  const [theme, setTheme] = useState("dark");
+  const [active, setActive] = useState(0);
+  const [done, setDone] = useState({});
+  const [journals, setJournals] = useState({});
+  const [mobileNav, setMobileNav] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState("");
+  const [trackerDays, setTrackerDays] = useState({});
+
+  const C = theme === "dark" ? DARK : LIGHT;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.theme) setTheme(s.theme);
+        if (s.done) setDone(s.done);
+        if (s.journals) setJournals(s.journals);
+        if (s.selectedMethod) setSelectedMethod(s.selectedMethod);
+        if (s.trackerDays) setTrackerDays(s.trackerDays);
+      }
+    } catch (err) {}
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme, done, journals, selectedMethod, trackerDays }));
+    } catch (err) {}
+  }, [theme, done, journals, selectedMethod, trackerDays, loaded]);
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+  const toggleDone = (i) => setDone({ ...done, [i]: !done[i] });
+  const toggleDay = (day) => setTrackerDays({ ...trackerDays, [day]: !trackerDays[day] });
+
+  const updateJournal = (fieldId, text) => {
+    const existing = journals[fieldId] || {};
+    setJournals({ ...journals, [fieldId]: { text, savedAt: existing.savedAt } });
+  };
+
+  const getAllFieldIds = (lesson) => {
+    const ids = [];
+    if (lesson.journals) lesson.journals.forEach(j => ids.push(j.id));
+    if (lesson.quantumLetter) {
+      ids.push(lesson.quantumLetter.letterField.id);
+      lesson.quantumLetter.reflectionFields.forEach(f => ids.push(f.id));
+    }
+    if (lesson.identitySwap) {
+      ids.push(lesson.identitySwap.areaField.id);
+      ids.push(lesson.identitySwap.actAsHerField.id);
+      ids.push(lesson.identitySwap.oldIdentityField.id);
+      lesson.identitySwap.dailyLog.forEach(d => ids.push(d.id));
+      lesson.identitySwap.closingReflection.forEach(r => ids.push(r.id));
+    }
+    if (lesson.trackerReflectionFields) lesson.trackerReflectionFields.forEach(f => ids.push(f.id));
+    return ids;
+  };
+
+  const saveLessonJournals = () => {
+    const lesson = MODULE_DATA.lessons[active];
+    const ids = getAllFieldIds(lesson);
+    const now = new Date().toISOString();
+    const updated = { ...journals };
+    ids.forEach(id => {
+      if (updated[id]) updated[id] = { ...updated[id], savedAt: now };
+    });
+    setJournals(updated);
+    setSaveStatus("✦ Saved");
+    setTimeout(() => setSaveStatus(""), 2000);
+  };
+
+  const exportLesson = (lesson) => {
+    let content = "QUANTUM QUEEN · MODULE 4 — QUANTUM JUMPING\n";
+    content += "Lesson " + lesson.id + ": " + lesson.title + "\n";
+    content += "Exported " + new Date().toLocaleString() + "\n";
+    content += "═══════════════════════════════════════════════════════\n\n";
+
+    if (lesson.journals) {
+      lesson.journals.forEach(j => {
+        content += j.prompt + "\n\n";
+        content += ((journals[j.id] && journals[j.id].text) || "(no entry)") + "\n\n";
+        content += "───────────────────────────────────────────────────────\n\n";
+      });
+    }
+
+    if (lesson.quantumLetter) {
+      const ql = lesson.quantumLetter;
+      content += "THE QUANTUM LETTER\n\n";
+      content += ql.letterField.prompt + "\n\n";
+      content += ((journals[ql.letterField.id] && journals[ql.letterField.id].text) || "(no entry)") + "\n\n";
+      content += "═══════════════════════════════════════════════════════\n\n";
+      content += "REFLECTIONS\n\n";
+      ql.reflectionFields.forEach(r => {
+        content += r.prompt + "\n\n";
+        content += ((journals[r.id] && journals[r.id].text) || "(no entry)") + "\n\n";
+        content += "───────────────────────────────────────────────────────\n\n";
+      });
+    }
+
+    if (lesson.identitySwap) {
+      const is = lesson.identitySwap;
+      content += "THE IDENTITY SWAP — 7-DAY EXPERIMENT\n\n";
+      content += is.areaField.prompt + "\n";
+      content += ((journals[is.areaField.id] && journals[is.areaField.id].text) || "(no entry)") + "\n\n";
+      content += is.actAsHerField.prompt + "\n";
+      content += ((journals[is.actAsHerField.id] && journals[is.actAsHerField.id].text) || "(no entry)") + "\n\n";
+      content += is.oldIdentityField.prompt + "\n";
+      content += ((journals[is.oldIdentityField.id] && journals[is.oldIdentityField.id].text) || "(no entry)") + "\n\n";
+      content += "───────────────────────────────────────────────────────\n\n";
+      content += "DAILY LOG\n\n";
+      is.dailyLog.forEach(d => {
+        content += d.label + "\n";
+        content += ((journals[d.id] && journals[d.id].text) || "(no entry)") + "\n\n";
+      });
+      content += "───────────────────────────────────────────────────────\n\n";
+      content += "CLOSING REFLECTION\n\n";
+      is.closingReflection.forEach(r => {
+        content += r.prompt + "\n\n";
+        content += ((journals[r.id] && journals[r.id].text) || "(no entry)") + "\n\n";
+      });
+    }
+
+    if (lesson.trackerReflectionFields) {
+      const completedDays = Object.values(trackerDays).filter(Boolean).length;
+      content += "21-DAY MORNING TRANSMISSION TRACKER\n";
+      content += "Days completed: " + completedDays + " / 21\n";
+      content += "Selected practice: " + (selectedMethod || "(not selected)") + "\n\n";
+      content += "═══════════════════════════════════════════════════════\n\n";
+      content += "WEEKLY REFLECTIONS\n\n";
+      lesson.trackerReflectionFields.forEach(f => {
+        content += f.prompt + "\n\n";
+        content += ((journals[f.id] && journals[f.id].text) || "(no entry)") + "\n\n";
+        content += "───────────────────────────────────────────────────────\n\n";
+      });
+    }
+
+    content += "\n\nYou are the alchemy.\nBadass Alchemy · Baddie Society · Quantum Queen\n";
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "quantum-queen-m4-lesson-" + lesson.id + "-" + lesson.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const progress = Math.round((Object.values(done).filter(Boolean).length / MODULE_DATA.lessons.length) * 100);
+
+  return (
+    <div style={{ display: "flex", height: "100vh", background: C.bg, color: C.txtSec }}>
+
+      {/* SIDEBAR */}
+      <div className={"sidebar" + (mobileNav ? " open" : "")} style={{
+        width: 300, minWidth: 300, height: "100%",
+        background: theme === "dark" ? "linear-gradient(180deg, rgba(31,19,32,0.96), rgba(31,19,32,0.99)), url(" + SIDEBAR_IMG + ")" : "linear-gradient(180deg, rgba(251,245,248,0.97), rgba(251,245,248,0.99)), url(" + SIDEBAR_IMG + ")",
+        backgroundSize: "cover", backgroundPosition: "center",
+        borderRight: "1px solid " + C.border,
+        padding: "32px 22px",
+        overflowY: "auto",
+        display: "flex", flexDirection: "column"
+      }}>
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 4 }}>
+            ✦ Badass Alchemy
+          </div>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 24, fontWeight: 700, color: C.txt, lineHeight: 1.15 }}>
+            Quantum Queen
+          </div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.txtFaded, textTransform: "uppercase", marginTop: 4 }}>
+            Baddie Society
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24, padding: 16, background: theme === "dark" ? "rgba(110,56,101,0.18)" : "rgba(110,56,101,0.06)", borderRadius: 12, border: "1px solid " + C.border }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: C.accentLt, textTransform: "uppercase", marginBottom: 6 }}>{MODULE_DATA.title}</div>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 18, fontWeight: 700, color: C.txt, lineHeight: 1.25, marginBottom: 8 }}>{MODULE_DATA.subtitle}</div>
+          <div style={{ fontSize: 11, color: C.txtMuted, lineHeight: 1.55, fontStyle: "italic" }}>{MODULE_DATA.tagline}</div>
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.txtMuted, textTransform: "uppercase" }}>Progress</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: C.accentLt }}>{progress}%</span>
+          </div>
+          <div style={{ height: 4, background: theme === "dark" ? "rgba(181,123,174,0.15)" : "rgba(110,56,101,0.1)", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ width: progress + "%", height: "100%", background: BRAND_GRAD, borderRadius: 4, transition: "width .5s cubic-bezier(.34,1.56,.64,1)" }} />
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          {MODULE_DATA.lessons.map((lesson, i) => {
+            const isActive = active === i;
+            const isDone = done[i];
+            return (
+              <div
+                key={i}
+                onClick={() => { setActive(i); setMobileNav(false); }}
+                style={{
+                  padding: "12px 14px",
+                  marginBottom: 6,
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  background: isActive ? (theme === "dark" ? "rgba(110,56,101,0.32)" : "rgba(110,56,101,0.1)") : "transparent",
+                  border: "1px solid " + (isActive ? C.borderMid : "transparent"),
+                  transition: "all .2s"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: isDone ? BRAND_GRAD : "transparent",
+                    border: "1.5px solid " + (isDone ? "transparent" : C.borderMid),
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 800, color: isDone ? "#FFFFFF" : C.txtFaded,
+                    flexShrink: 0
+                  }}>
+                    {isDone ? "✓" : (i)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 14.5, fontWeight: 700, color: isActive ? C.txt : C.txtSec, lineHeight: 1.3 }}>{lesson.title}</div>
+                    <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{lesson.dur}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid " + C.border, display: "flex", gap: 8 }}>
+          <button onClick={toggleTheme} style={{
+            flex: 1, fontSize: 9, fontWeight: 700, letterSpacing: 1,
+            color: C.txtMuted, background: "transparent",
+            padding: "9px 12px", borderRadius: 50,
+            border: "1px solid " + C.borderMid, cursor: "pointer",
+            textTransform: "uppercase"
+          }}>{theme === "dark" ? "☀ Light" : "☾ Dark"}</button>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+
+        {/* Mobile top bar */}
+        <div className="mobile-only" style={{
+          display: "none",
+          position: "sticky", top: 0, zIndex: 50,
+          background: C.bg, borderBottom: "1px solid " + C.border,
+          padding: "14px 20px",
+          alignItems: "center", justifyContent: "space-between"
+        }}>
+          <button onClick={() => setMobileNav(!mobileNav)} style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: 1,
+            color: C.txt, background: "transparent",
+            padding: "8px 14px", borderRadius: 50,
+            border: "1px solid " + C.borderMid, cursor: "pointer",
+            textTransform: "uppercase"
+          }}>☰ Lessons</button>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 16, color: C.accentLt }}>Module 4</div>
+        </div>
+
+        <div className="main-inner" style={{ padding: "44px 56px 80px", maxWidth: 820, margin: "0 auto" }}>
+          {(() => {
+            const lesson = MODULE_DATA.lessons[active];
+
+            return (
+              <div className="lesson-content" key={active}>
+
+                {/* HEADER */}
+                <div className="lesson-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 8 }}>
+                      ✦ Lesson {lesson.id} · {lesson.dur}
+                    </div>
+                    <h1 style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, fontSize: "clamp(26px,3.5vw,34px)", lineHeight: 1.15, color: C.txt, marginBottom: 0 }}>
+                      {lesson.title}
+                    </h1>
+                  </div>
+                  <button onClick={() => toggleDone(active)} style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: 1.2,
+                    color: done[active] ? "#FFFFFF" : C.txtMuted,
+                    background: done[active] ? BRAND_GRAD : "transparent",
+                    padding: "10px 16px", borderRadius: 50,
+                    border: "1px solid " + (done[active] ? "transparent" : C.borderMid),
+                    cursor: "pointer", textTransform: "uppercase",
+                    whiteSpace: "nowrap", flexShrink: 0
+                  }}>{done[active] ? "✓ Complete" : "Mark Complete"}</button>
+                </div>
+
+                <div style={{ height: 1, background: C.border, margin: "24px 0 32px" }} />
+
+                {/* DESC */}
+                <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txtSec, marginBottom: 22, fontWeight: 500 }}>
+                  {lesson.desc}
+                </div>
+                <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txtSec, marginBottom: 36, fontWeight: 500, fontStyle: "italic" }}>
+                  {lesson.desc2}
+                </div>
+
+                {/* VIDEO CALLOUT for welcome */}
+                {lesson.type === "video" && (
+                  <div style={{
+                    background: BRAND_GRAD,
+                    borderRadius: 14,
+                    padding: "24px 26px",
+                    marginBottom: 36,
+                    border: "1px solid rgba(255,255,255,0.25)"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                      <div style={{ width: 52, height: 52, minWidth: 52, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
+                        <span style={{ fontSize: 20, color: "#FFFFFF" }}>▶</span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 6 }}>Video Lesson</div>
+                        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.35 }}>
+                          Watch the welcome video inside the <em style={{ color: "#2A1424", fontStyle: "italic", fontWeight: 700 }}>Skool classroom.</em>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAKEAWAYS */}
+                <SectionHeader icon="🌙" label="Core Takeaways" color={C.accent} />
+                <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 24, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                  {lesson.takeaways.map((t, i) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: i === lesson.takeaways.length - 1 ? 0 : 16, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 14, color: C.accentLt, marginTop: 2 }}>✦</span>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 400, fontSize: 16, color: C.txtSec, lineHeight: 1.55 }}>{t}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ACTIONS */}
+                <SectionHeader icon="⭐" label="Your Action Steps" color={C.accent} />
+                <div style={{ marginBottom: 36 }}>
+                  {lesson.actions.map((a, i) => (
+                    <div key={i} style={{ display: "flex", gap: 14, marginBottom: 14, padding: 16, background: C.bgCard, borderRadius: 12, border: "1px solid " + C.border, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: BRAND_GRAD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#FFFFFF" }}>{i + 1}</div>
+                      <div style={{ fontSize: 13.5, color: C.txtSec, lineHeight: 1.7, fontWeight: 500 }}>{a}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* JOURNALS (constants, purpose, portrait) */}
+                {lesson.journals && (
+                  <div>
+                    <SectionHeader icon="🔮" label="Your Journal Practice" color={C.accent} status={saveStatus} />
+                    {lesson.journals.map(j => {
+                      const entry = journals[j.id];
+                      return (
+                        <div key={j.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.detail : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{j.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(j.id, ev.target.value)}
+                            placeholder="Write here. No editing. Just truth."
+                            rows={6}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txtSec, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                          />
+                        </div>
+                      );
+                    })}
+                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Journal" />
+                  </div>
+                )}
+
+                {/* QUANTUM LETTER */}
+                {lesson.quantumLetter && (
+                  <div>
+                    <SectionHeader icon="💌" label="The Letter From Her" color={C.accent} status={saveStatus} />
+                    {(() => {
+                      const lf = lesson.quantumLetter.letterField;
+                      const entry = journals[lf.id];
+                      return (
+                        <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.borderMid, padding: 26, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 19, color: theme === "dark" ? C.detail : C.accent, marginBottom: 8, lineHeight: 1.4 }}>{lf.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(lf.id, ev.target.value)}
+                            placeholder={lf.placeholder}
+                            rows={16}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "16px 18px", fontSize: 14, color: C.txtSec, lineHeight: 1.85, resize: "vertical", marginTop: 10, fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic" }}
+                          />
+                        </div>
+                      );
+                    })()}
+
+                    <SectionHeader icon="✨" label="Reflections on Her Letter" color={C.accent} />
+                    {lesson.quantumLetter.reflectionFields.map(r => {
+                      const entry = journals[r.id];
+                      return (
+                        <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.detail : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(r.id, ev.target.value)}
+                            placeholder="Write what is true."
+                            rows={4}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txtSec, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                          />
+                        </div>
+                      );
+                    })}
+                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Letter" />
+                  </div>
+                )}
+
+                {/* IDENTITY SWAP */}
+                {lesson.identitySwap && (
+                  <div>
+                    <div style={{
+                      background: BRAND_GRAD,
+                      borderRadius: 14,
+                      padding: "20px 24px",
+                      marginBottom: 28,
+                      border: "1px solid rgba(255,255,255,0.25)"
+                    }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 8 }}>The Setup</div>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontStyle: "italic", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.5 }}>{lesson.identitySwap.intro}</div>
+                    </div>
+
+                    <SectionHeader icon="🔮" label="Define Your Swap" color={C.accent} status={saveStatus} />
+                    {[lesson.identitySwap.areaField, lesson.identitySwap.actAsHerField, lesson.identitySwap.oldIdentityField].map(f => {
+                      const entry = journals[f.id];
+                      return (
+                        <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.detail : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(f.id, ev.target.value)}
+                            placeholder={f.placeholder}
+                            rows={4}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txtSec, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                          />
+                        </div>
+                      );
+                    })}
+
+                    <SectionHeader icon="⭐" label="The 7-Day Log" color={C.accent} />
+                    <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 28, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      {lesson.identitySwap.dailyLog.map((d, i) => {
+                        const entry = journals[d.id];
+                        return (
+                          <div key={d.id} style={{ marginBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, paddingBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, borderBottom: i === lesson.identitySwap.dailyLog.length - 1 ? "none" : "1px solid " + C.border }}>
+                            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 8 }}>{d.label}</div>
+                            <textarea
+                              value={(entry && entry.text) || ""}
+                              onChange={(ev) => updateJournal(d.id, ev.target.value)}
+                              placeholder="One sentence. What did acting as her look like today?"
+                              rows={2}
+                              style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", fontSize: 13, color: C.txtSec, lineHeight: 1.65, resize: "vertical" }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <SectionHeader icon="✨" label="Closing Reflection" color={C.accent} />
+                    {lesson.identitySwap.closingReflection.map(r => {
+                      const entry = journals[r.id];
+                      return (
+                        <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.detail : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(r.id, ev.target.value)}
+                            placeholder="The data is what matters. Write what is true."
+                            rows={4}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txtSec, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                          />
+                        </div>
+                      );
+                    })}
+                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Swap" />
+                  </div>
+                )}
+
+                {/* 21-DAY TRACKER */}
+                {lesson.type === "tracker" && (
+                  <div>
+                    <SectionHeader icon="⭐" label="Choose Your Practice Method" color={C.accent} />
+                    <div style={{ display: "grid", gap: 12, marginBottom: 32 }}>
+                      {lesson.practiceMethods.map(m => {
+                        const isSelected = selectedMethod === m.id;
+                        return (
+                          <div key={m.id} onClick={() => setSelectedMethod(m.id)} style={{
+                            background: isSelected ? "linear-gradient(135deg, rgba(110,56,101,0.22), rgba(181,123,174,0.12))" : C.bgCard,
+                            borderRadius: 14,
+                            border: "1.5px solid " + (isSelected ? C.accentLt : C.border),
+                            padding: 22,
+                            cursor: "pointer",
+                            transition: "all .2s",
+                            boxShadow: theme === "light" && isSelected ? C.shadow : "none"
+                          }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                              <div style={{ width: 22, height: 22, borderRadius: "50%", background: isSelected ? BRAND_GRAD : "transparent", border: "1.5px solid " + (isSelected ? "transparent" : C.borderMid), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                                {isSelected && <span style={{ fontSize: 11, color: "#FFFFFF", fontWeight: 800 }}>✓</span>}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 18, color: isSelected ? C.txt : C.txtSec, marginBottom: 6, lineHeight: 1.35 }}>{m.title}</div>
+                                <div style={{ fontSize: 13, color: C.txtMuted, lineHeight: 1.7 }}>{m.desc}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* 21-DAY GRID */}
+                    <SectionHeader icon="🌙" label="21-Day Tracker" color={C.accent} />
+                    <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div className="tracker-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 8 }}>
+                        {Array.from({ length: 21 }, (_, i) => i + 1).map(day => {
+                          const isChecked = trackerDays[day];
+                          return (
+                            <div key={day} onClick={() => toggleDay(day)} style={{
+                              aspectRatio: "1",
+                              borderRadius: 12,
+                              background: isChecked ? "linear-gradient(135deg," + MAUVE_LIGHT + "," + MAUVE_DEEP + ")" : "transparent",
+                              border: "1.5px solid " + (isChecked ? "transparent" : C.borderMid),
+                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                              cursor: "pointer",
+                              transition: "all .2s",
+                              minHeight: 56
+                            }}>
+                              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: isChecked ? "rgba(255,255,255,0.85)" : C.txtFaded, textTransform: "uppercase", marginBottom: 2 }}>Day</div>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: isChecked ? "#FFFFFF" : C.txtMuted, fontFamily: "'Cormorant Garamond',serif" }}>{day}</div>
+                              {isChecked && <div style={{ fontSize: 10, color: "#FFFFFF", marginTop: 2 }}>✓</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid " + C.border, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg," + C.accent + "," + C.accentLt + ")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 700, color: "#FFFFFF", fontFamily: "'Cormorant Garamond',serif" }}>
+                            {Object.values(trackerDays).filter(Boolean).length}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.accent, textTransform: "uppercase" }}>Mornings Transmitted</div>
+                            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 14, color: C.txtSec, marginTop: 2 }}>
+                              {Object.values(trackerDays).filter(Boolean).length === 21 ? "She is the default now." : Object.values(trackerDays).filter(Boolean).length >= 14 ? "The final week — let her arrive." : Object.values(trackerDays).filter(Boolean).length >= 7 ? "Her frequency is becoming familiar." : Object.values(trackerDays).filter(Boolean).length >= 1 ? "You have started returning to her." : "Begin tomorrow morning. Before the phone."}
+                            </div>
+                          </div>
+                        </div>
+                        {Object.values(trackerDays).filter(Boolean).length > 0 && (
+                          <button onClick={() => { if (window.confirm("Reset all 21 days? This cannot be undone.")) setTrackerDays({}); }} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "9px 16px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>Reset Tracker</button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* WEEKLY REFLECTIONS */}
+                    <SectionHeader icon="🔮" label="Weekly Reflections" color={C.accent} status={saveStatus} />
+                    {lesson.trackerReflectionFields.map(f => {
+                      const entry = journals[f.id];
+                      return (
+                        <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.detail : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
+                          {entry && entry.savedAt && (
+                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                          )}
+                          <textarea
+                            value={(entry && entry.text) || ""}
+                            onChange={(ev) => updateJournal(f.id, ev.target.value)}
+                            placeholder="What is true at this point in the practice?"
+                            rows={5}
+                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txtSec, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                          />
+                        </div>
+                      );
+                    })}
+                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Reflections" />
+                    <div style={{ fontWeight: 500, fontSize: 11, color: C.txtFaded, lineHeight: 1.7, marginTop: 14, letterSpacing: 0.3 }}>
+                      On Day 21, carry her frequency into Module 5. The Sovereign Queen Era begins where her transmission becomes your standards.
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 44, paddingTop: 28, borderTop: "1px solid " + C.border, display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center" }} className="lesson-bottom">
+                  {active > 0 ? (
+                    <button onClick={() => setActive(active - 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "12px 22px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>← Previous</button>
+                  ) : <span />}
+                  {active < MODULE_DATA.lessons.length - 1 && (
+                    <button onClick={() => setActive(active + 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.moonPrl, background: "linear-gradient(135deg," + C.accent + "," + C.darkMid + ")", padding: "13px 24px", borderRadius: 50, border: "none", cursor: "pointer", textTransform: "uppercase" }}>Next Lesson →</button>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 56, paddingTop: 28, borderTop: "1px solid " + C.border, textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontStyle: "italic", color: C.accent, marginBottom: 6 }}>You are the alchemy.</div>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 2, textTransform: "uppercase" }}>Badass Alchemy · Baddie Society · Quantum Queen</div>
+                </div>
+
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ icon, label, color, status }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+      <span style={{ fontSize: 16 }}>{icon}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: color, textTransform: "uppercase" }}>{label}</span>
+      {status && <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, letterSpacing: 1, color: color }}>{status}</span>}
+    </div>
+  );
+}
+
+function SaveExportButtons({ onSave, onExport, C, saveLabel }) {
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
+      <button onClick={onSave} style={{ flex: 1, minWidth: 120, fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.moonPrl, background: "linear-gradient(135deg," + C.accent + "," + C.darkMid + ")", padding: "12px 20px", borderRadius: 50, border: "none", cursor: "pointer", textTransform: "uppercase" }}>{saveLabel}</button>
+      <button onClick={onExport} style={{ flex: 1, minWidth: 120, fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.txt, background: "transparent", padding: "11px 20px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>⬇ Download .txt</button>
+    </div>
+  );
+}
+
+// Mount
+document.getElementById('loading').style.display = 'none';
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+
+</body>
+</html>
