@@ -14,11 +14,8 @@
   textarea{font-family:'Montserrat',sans-serif;font-weight:500}
   button{font-family:'Montserrat',sans-serif;outline:none}
   @keyframes fadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
-  @keyframes expandIn{0%{opacity:0;max-height:0}100%{opacity:1;max-height:5000px}}
-  @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(181,123,174,0.4)}50%{box-shadow:0 0 0 8px rgba(181,123,174,0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .lesson-content{animation:fadeIn .3s ease both}
-  .expand-content{animation:expandIn .35s ease both;overflow:hidden}
-  .pulse{animation:pulseGlow 2s ease-in-out infinite}
   @media(max-width:768px){
     .desktop-only{display:none!important}
     .mobile-only{display:flex!important}
@@ -33,7 +30,6 @@
   @media(min-width:769px){.mobile-only{display:none!important}}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#1F1320;color:#B57BAE;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;z-index:9999;flex-direction:column;gap:12px}
   .spinner{width:32px;height:32px;border:2px solid rgba(181,123,174,0.2);border-top-color:#B57BAE;border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -46,7 +42,6 @@
 <script src="https://unpkg.com/@babel/standalone@7.23.0/babel.min.js"></script>
 
 <script type="text/babel">
-const e = React.createElement;
 const { useState, useEffect } = React;
 
 const MAUVE_LIGHT = "#B57BAE";
@@ -328,578 +323,500 @@ function App() {
     setJournals({ ...journals, [fieldId]: { text, savedAt: existing.savedAt } });
   };
 
-  const getAllFieldIds = (lesson) => {
-    const ids = [];
-    if (lesson.journals) lesson.journals.forEach(j => ids.push(j.id));
-    if (lesson.quantumLetter) {
-      ids.push(lesson.quantumLetter.letterField.id);
-      lesson.quantumLetter.reflectionFields.forEach(f => ids.push(f.id));
-    }
-    if (lesson.identitySwap) {
-      ids.push(lesson.identitySwap.areaField.id);
-      ids.push(lesson.identitySwap.actAsHerField.id);
-      ids.push(lesson.identitySwap.oldIdentityField.id);
-      lesson.identitySwap.dailyLog.forEach(d => ids.push(d.id));
-      lesson.identitySwap.closingReflection.forEach(r => ids.push(r.id));
-    }
-    if (lesson.trackerReflectionFields) lesson.trackerReflectionFields.forEach(f => ids.push(f.id));
-    return ids;
-  };
-
-  const saveLessonJournals = () => {
-    const lesson = MODULE_DATA.lessons[active];
-    const ids = getAllFieldIds(lesson);
-    const now = new Date().toISOString();
-    const updated = { ...journals };
-    ids.forEach(id => {
-      if (updated[id]) updated[id] = { ...updated[id], savedAt: now };
+  const getEntries = (lesson) => {
+    const out = [];
+    if (lesson.journals) lesson.journals.forEach(j => {
+      const en = journals[j.id];
+      if (en && en.text) out.push({ prompt: j.prompt, text: en.text });
     });
-    setJournals(updated);
-    setSaveStatus("✦ Saved");
-    setTimeout(() => setSaveStatus(""), 2000);
-  };
-
-  const exportLesson = (lesson) => {
-    let content = "QUANTUM QUEEN · MODULE 4 — QUANTUM JUMPING\n";
-    content += "Lesson " + lesson.id + ": " + lesson.title + "\n";
-    content += "Exported " + new Date().toLocaleString() + "\n";
-    content += "═══════════════════════════════════════════════════════\n\n";
-
-    if (lesson.journals) {
-      lesson.journals.forEach(j => {
-        content += j.prompt + "\n\n";
-        content += ((journals[j.id] && journals[j.id].text) || "(no entry)") + "\n\n";
-        content += "───────────────────────────────────────────────────────\n\n";
-      });
-    }
-
     if (lesson.quantumLetter) {
-      const ql = lesson.quantumLetter;
-      content += "THE QUANTUM LETTER\n\n";
-      content += ql.letterField.prompt + "\n\n";
-      content += ((journals[ql.letterField.id] && journals[ql.letterField.id].text) || "(no entry)") + "\n\n";
-      content += "═══════════════════════════════════════════════════════\n\n";
-      content += "REFLECTIONS\n\n";
-      ql.reflectionFields.forEach(r => {
-        content += r.prompt + "\n\n";
-        content += ((journals[r.id] && journals[r.id].text) || "(no entry)") + "\n\n";
-        content += "───────────────────────────────────────────────────────\n\n";
+      const lf = lesson.quantumLetter.letterField;
+      const lEn = journals[lf.id];
+      if (lEn && lEn.text) out.push({ prompt: "THE LETTER — " + lf.prompt, text: lEn.text });
+      lesson.quantumLetter.reflectionFields.forEach(r => {
+        const en = journals[r.id];
+        if (en && en.text) out.push({ prompt: r.prompt, text: en.text });
       });
     }
-
     if (lesson.identitySwap) {
       const is = lesson.identitySwap;
-      content += "THE IDENTITY SWAP — 7-DAY EXPERIMENT\n\n";
-      content += is.areaField.prompt + "\n";
-      content += ((journals[is.areaField.id] && journals[is.areaField.id].text) || "(no entry)") + "\n\n";
-      content += is.actAsHerField.prompt + "\n";
-      content += ((journals[is.actAsHerField.id] && journals[is.actAsHerField.id].text) || "(no entry)") + "\n\n";
-      content += is.oldIdentityField.prompt + "\n";
-      content += ((journals[is.oldIdentityField.id] && journals[is.oldIdentityField.id].text) || "(no entry)") + "\n\n";
-      content += "───────────────────────────────────────────────────────\n\n";
-      content += "DAILY LOG\n\n";
-      is.dailyLog.forEach(d => {
-        content += d.label + "\n";
-        content += ((journals[d.id] && journals[d.id].text) || "(no entry)") + "\n\n";
+      [is.areaField, is.actAsHerField, is.oldIdentityField].forEach(f => {
+        const en = journals[f.id];
+        if (en && en.text) out.push({ prompt: f.prompt, text: en.text });
       });
-      content += "───────────────────────────────────────────────────────\n\n";
-      content += "CLOSING REFLECTION\n\n";
+      is.dailyLog.forEach(d => {
+        const en = journals[d.id];
+        if (en && en.text) out.push({ prompt: d.label, text: en.text });
+      });
       is.closingReflection.forEach(r => {
-        content += r.prompt + "\n\n";
-        content += ((journals[r.id] && journals[r.id].text) || "(no entry)") + "\n\n";
+        const en = journals[r.id];
+        if (en && en.text) out.push({ prompt: r.prompt, text: en.text });
       });
     }
-
     if (lesson.trackerReflectionFields) {
       const completedDays = Object.values(trackerDays).filter(Boolean).length;
-      content += "21-DAY MORNING TRANSMISSION TRACKER\n";
-      content += "Days completed: " + completedDays + " / 21\n";
-      content += "Selected practice: " + (selectedMethod || "(not selected)") + "\n\n";
-      content += "═══════════════════════════════════════════════════════\n\n";
-      content += "WEEKLY REFLECTIONS\n\n";
+      if (selectedMethod) out.push({ prompt: "Practice Method", text: selectedMethod });
+      out.push({ prompt: "Days Completed", text: completedDays + " of 21" });
       lesson.trackerReflectionFields.forEach(f => {
-        content += f.prompt + "\n\n";
-        content += ((journals[f.id] && journals[f.id].text) || "(no entry)") + "\n\n";
-        content += "───────────────────────────────────────────────────────\n\n";
+        const en = journals[f.id];
+        if (en && en.text) out.push({ prompt: f.prompt, text: en.text });
       });
     }
+    return out;
+  };
 
-    content += "\n\nYou are the alchemy.\nBadass Alchemy · Baddie Society · Quantum Queen\n";
-
-    const blob = new Blob([content], { type: "text/plain" });
+  const download = (filename, content) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "quantum-queen-m4-lesson-" + lesson.id + "-" + lesson.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".txt";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const progress = Math.round((Object.values(done).filter(Boolean).length / MODULE_DATA.lessons.length) * 100);
+  const exportLesson = (lesson) => {
+    const entries = getEntries(lesson);
+    const body = entries.length === 0 ? "No entries yet." : entries.map(en => en.prompt + "\n\n" + en.text + "\n\n────────────").join("\n\n");
+    const content = "BADASS ALCHEMY · QUANTUM QUEEN\n" + MODULE_DATA.title + " — " + MODULE_DATA.subtitle + "\n" + lesson.title + "\nExported: " + new Date().toLocaleString() + "\n\n═════════════\n\n" + body;
+    download("quantum-queen-" + lesson.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".txt", content);
+  };
+
+  const exportAll = () => {
+    const sections = MODULE_DATA.lessons.map(l => {
+      const ents = getEntries(l);
+      if (ents.length === 0) return null;
+      return l.title.toUpperCase() + "\n\n" + ents.map(en => en.prompt + "\n\n" + en.text).join("\n\n────────\n\n");
+    }).filter(Boolean).join("\n\n═════════════\n\n");
+    const content = "BADASS ALCHEMY · QUANTUM QUEEN\n" + MODULE_DATA.title + " — " + MODULE_DATA.subtitle + "\nFull Journal Export\nExported: " + new Date().toLocaleString() + "\n\n═════════════\n\n" + (sections || "No entries yet.");
+    download("quantum-queen-module-4-full-journal.txt", content);
+  };
+
+  const saveLessonJournals = () => {
+    const now = new Date().toISOString();
+    const updated = { ...journals };
+    Object.keys(updated).forEach(id => {
+      if (updated[id] && updated[id].text) updated[id] = { ...updated[id], savedAt: now };
+    });
+    setJournals(updated);
+    setSaveStatus("✦ Saved");
+    setTimeout(() => setSaveStatus(""), 2000);
+  };
+
+  const doneCount = Object.values(done).filter(Boolean).length;
+  const progress = Math.round((doneCount / MODULE_DATA.lessons.length) * 100);
+  const lesson = MODULE_DATA.lessons[active];
+  const sidebarOverlay = theme === "dark"
+    ? "linear-gradient(180deg, rgba(31,19,32,0.78) 0%, rgba(42,26,45,0.85) 100%)"
+    : "linear-gradient(180deg, rgba(251,245,248,0.88) 0%, rgba(245,232,239,0.92) 100%)";
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: C.bg, color: C.txtSec }}>
+    <div style={{ fontFamily: "'Montserrat',sans-serif", background: C.bg, color: C.txtSec, height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* SIDEBAR */}
-      <div className={"sidebar" + (mobileNav ? " open" : "")} style={{
-        width: 300, minWidth: 300, height: "100%",
-        background: theme === "dark" ? "linear-gradient(180deg, rgba(31,19,32,0.96), rgba(31,19,32,0.99)), url(" + SIDEBAR_IMG + ")" : "linear-gradient(180deg, rgba(251,245,248,0.97), rgba(251,245,248,0.99)), url(" + SIDEBAR_IMG + ")",
-        backgroundSize: "cover", backgroundPosition: "center",
-        borderRight: "1px solid " + C.border,
-        padding: "32px 22px",
-        overflowY: "auto",
-        display: "flex", flexDirection: "column"
-      }}>
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 4 }}>
-            ✦ Badass Alchemy
+      {/* TOP BAR */}
+      <div style={{ background: BRAND_GRAD, padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid " + C.border }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => setMobileNav(!mobileNav)} className="mobile-only" style={{ background: "none", border: "none", color: "#3A1E33", fontSize: 20, cursor: "pointer", padding: 4 }}>☰</button>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
+            <span style={{ color: "#3A1E33", fontSize: 16, fontWeight: 700 }}>✦</span>
           </div>
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 24, fontWeight: 700, color: C.txt, lineHeight: 1.15 }}>
-            Quantum Queen
-          </div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.txtFaded, textTransform: "uppercase", marginTop: 4 }}>
-            Baddie Society
+          <div>
+            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, fontSize: 18, color: "#FFFFFF", lineHeight: 1 }}>Quantum Queen</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "#3A1E33", textTransform: "uppercase", marginTop: 3 }}>Badass Alchemy · Baddie Society</div>
           </div>
         </div>
 
-        <div style={{ marginBottom: 24, padding: 16, background: theme === "dark" ? "rgba(110,56,101,0.18)" : "rgba(110,56,101,0.06)", borderRadius: 12, border: "1px solid " + C.border }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: C.accentLt, textTransform: "uppercase", marginBottom: 6 }}>{MODULE_DATA.title}</div>
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 18, fontWeight: 700, color: C.txt, lineHeight: 1.25, marginBottom: 8 }}>{MODULE_DATA.subtitle}</div>
-          <div style={{ fontSize: 11, color: C.txtMuted, lineHeight: 1.55, fontStyle: "italic" }}>{MODULE_DATA.tagline}</div>
-        </div>
-
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.txtMuted, textTransform: "uppercase" }}>Progress</span>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: C.accentLt }}>{progress}%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{ display: "flex", gap: 24 }} className="desktop-only">
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#FFFFFF", textTransform: "uppercase", borderBottom: "2px solid #3A1E33", paddingBottom: 22, paddingTop: 22 }}>Classroom</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "rgba(58,30,51,0.7)", textTransform: "uppercase", paddingBottom: 22, paddingTop: 22 }}>Community</span>
           </div>
-          <div style={{ height: 4, background: theme === "dark" ? "rgba(181,123,174,0.15)" : "rgba(110,56,101,0.1)", borderRadius: 4, overflow: "hidden" }}>
-            <div style={{ width: progress + "%", height: "100%", background: BRAND_GRAD, borderRadius: 4, transition: "width .5s cubic-bezier(.34,1.56,.64,1)" }} />
-          </div>
-        </div>
-
-        <div style={{ flex: 1 }}>
-          {MODULE_DATA.lessons.map((lesson, i) => {
-            const isActive = active === i;
-            const isDone = done[i];
-            return (
-              <div
-                key={i}
-                onClick={() => { setActive(i); setMobileNav(false); }}
-                style={{
-                  padding: "12px 14px",
-                  marginBottom: 6,
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  background: isActive ? (theme === "dark" ? "rgba(110,56,101,0.32)" : "rgba(110,56,101,0.1)") : "transparent",
-                  border: "1px solid " + (isActive ? C.borderMid : "transparent"),
-                  transition: "all .2s"
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%",
-                    background: isDone ? BRAND_GRAD : "transparent",
-                    border: "1.5px solid " + (isDone ? "transparent" : C.borderMid),
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 10, fontWeight: 800, color: isDone ? "#FFFFFF" : C.txtFaded,
-                    flexShrink: 0
-                  }}>
-                    {isDone ? "✓" : (i)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 14.5, fontWeight: 700, color: isActive ? C.txt : C.txtSec, lineHeight: 1.3 }}>{lesson.title}</div>
-                    <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{lesson.dur}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid " + C.border, display: "flex", gap: 8 }}>
-          <button onClick={toggleTheme} style={{
-            flex: 1, fontSize: 9, fontWeight: 700, letterSpacing: 1,
-            color: C.txtMuted, background: "transparent",
-            padding: "9px 12px", borderRadius: 50,
-            border: "1px solid " + C.borderMid, cursor: "pointer",
-            textTransform: "uppercase"
-          }}>{theme === "dark" ? "☀ Light" : "☾ Dark"}</button>
+          <button onClick={toggleTheme} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 50, padding: "7px 14px", cursor: "pointer", color: "#3A1E33", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+            <span style={{ fontSize: 13 }}>{theme === "dark" ? "☾" : "☀"}</span>
+            <span className="desktop-only">{theme === "dark" ? "Dark" : "Light"}</span>
+          </button>
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+        {mobileNav && <div onClick={() => setMobileNav(false)} className="mobile-only" style={{ position: "absolute", inset: 0, background: "rgba(31,19,32,0.7)", zIndex: 99 }} />}
 
-        {/* Mobile top bar */}
-        <div className="mobile-only" style={{
-          display: "none",
-          position: "sticky", top: 0, zIndex: 50,
-          background: C.bg, borderBottom: "1px solid " + C.border,
-          padding: "14px 20px",
-          alignItems: "center", justifyContent: "space-between"
+        {/* SIDEBAR */}
+        <div className={mobileNav ? "sidebar open" : "sidebar"} style={{
+          width: 300, minWidth: 300, display: "flex", flexDirection: "column", overflow: "hidden",
+          backgroundImage: sidebarOverlay + ", url('" + SIDEBAR_IMG + "')",
+          backgroundSize: "cover", backgroundPosition: "center",
+          borderRight: "1px solid " + C.border
         }}>
-          <button onClick={() => setMobileNav(!mobileNav)} style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: 1,
-            color: C.txt, background: "transparent",
-            padding: "8px 14px", borderRadius: 50,
-            border: "1px solid " + C.borderMid, cursor: "pointer",
-            textTransform: "uppercase"
-          }}>☰ Lessons</button>
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 16, color: C.accentLt }}>Module 4</div>
+          <div style={{ padding: "26px 22px 22px", borderBottom: "1px solid " + C.border, background: theme === "dark" ? "rgba(22,12,24,0.35)" : "rgba(255,255,255,0.2)" }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1.5, color: theme === "dark" ? C.accentLt : C.accent, textTransform: "uppercase", marginBottom: 6 }}>{MODULE_DATA.title}</div>
+            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: C.txt, lineHeight: 1.15, marginBottom: 4 }}>{MODULE_DATA.subtitle}</div>
+            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 12, fontStyle: "italic", color: theme === "dark" ? C.txt : C.accent, marginBottom: 16, lineHeight: 1.4 }}>{MODULE_DATA.tagline}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1, height: 5, background: theme === "dark" ? "rgba(250,239,244,0.1)" : "rgba(110,56,101,0.15)", borderRadius: 100, overflow: "hidden" }}>
+                <div style={{ height: "100%", background: "linear-gradient(90deg," + C.accent + "," + C.accentLt + ")", width: progress + "%", borderRadius: 100, transition: "width .5s" }} />
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: theme === "dark" ? C.accentLt : C.accent, minWidth: 30, textAlign: "right" }}>{progress}%</div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "14px 12px 24px" }}>
+            {MODULE_DATA.lessons.map((l, i) => {
+              const isActive = active === i;
+              const isDone = !!done[i];
+              return (
+                <div key={i} onClick={() => { setActive(i); setMobileNav(false); }} style={{
+                  display: "flex", alignItems: "center", gap: 11, padding: "12px 14px", borderRadius: 12, cursor: "pointer", marginBottom: 4,
+                  background: isActive ? (theme === "dark" ? "rgba(110,56,101,0.45)" : "rgba(255,255,255,0.7)") : (theme === "dark" ? "rgba(22,12,24,0.3)" : "rgba(255,255,255,0.35)"),
+                  border: "1px solid " + (isActive ? C.borderMid : "transparent")
+                }}>
+                  <div style={{ width: 22, height: 22, minWidth: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: isDone ? "linear-gradient(135deg," + C.accent + "," + C.accentLt + ")" : "transparent", border: isDone ? "none" : "1.5px solid " + C.borderMid }}>
+                    {isDone && <span style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 700 }}>✓</span>}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, color: isActive ? C.txt : C.txt, fontWeight: isActive ? 700 : 500, lineHeight: 1.3 }}>{l.title}</div>
+                    <div style={{ fontSize: 8, color: theme === "dark" ? C.txtMuted : C.txtMuted, letterSpacing: 0.5, marginTop: 2, fontWeight: 600 }}>{l.dur}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ padding: "14px 16px", borderTop: "1px solid " + C.border, background: theme === "dark" ? "rgba(22,12,24,0.5)" : "rgba(255,255,255,0.4)" }}>
+            <button onClick={exportAll} style={{ width: "100%", fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: C.txt, background: "transparent", padding: "11px 12px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>
+              ⬇ Download All Journals
+            </button>
+          </div>
         </div>
 
-        <div className="main-inner" style={{ padding: "44px 56px 80px", maxWidth: 820, margin: "0 auto" }}>
-          {(() => {
-            const lesson = MODULE_DATA.lessons[active];
+        {/* MAIN CONTENT */}
+        <div style={{ flex: 1, overflowY: "auto", background: C.bg }}>
+          <div style={{ maxWidth: 720, padding: "36px 40px 80px" }} className="main-inner lesson-content" key={active + "-" + theme}>
 
-            return (
-              <div className="lesson-content" key={active}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: theme === "dark" ? C.accentLt : C.accent, textTransform: "uppercase", marginBottom: 10 }}>
+              Lesson {lesson.id + 1} of {MODULE_DATA.lessons.length} · {lesson.dur}
+            </div>
 
-                {/* HEADER */}
-                <div className="lesson-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, marginBottom: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 8 }}>
-                      ✦ Lesson {lesson.id} · {lesson.dur}
-                    </div>
-                    <h1 style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, fontSize: "clamp(26px,3.5vw,34px)", lineHeight: 1.15, color: C.txt, marginBottom: 0 }}>
-                      {lesson.title}
-                    </h1>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 22 }} className="lesson-top">
+              <h1 style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, fontSize: "clamp(26px,3.5vw,34px)", color: C.txt, lineHeight: 1.15 }}>{lesson.title}</h1>
+              <button onClick={() => toggleDone(active)} style={{ flexShrink: 0, marginTop: 6, fontSize: 9, fontWeight: 700, letterSpacing: 1.2, padding: "10px 18px", borderRadius: 50, border: done[active] ? "none" : "1px solid " + C.borderMid, cursor: "pointer", background: done[active] ? "linear-gradient(135deg," + C.accent + "," + C.accentLt + ")" : "transparent", color: done[active] ? C.moonPrl : C.txtMuted, textTransform: "uppercase" }}>
+                {done[active] ? "✦ Complete" : "○ Mark Complete"}
+              </button>
+            </div>
+
+            {/* VIDEO CALLOUT for welcome */}
+            {lesson.type === "video" && (
+              <div style={{ background: BRAND_GRAD, borderRadius: 14, border: "1px solid " + C.borderMid, padding: "24px 26px", marginBottom: 28, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                  <div style={{ width: 52, height: 52, minWidth: 52, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
+                    <span style={{ fontSize: 20, color: "#FFFFFF" }}>▶</span>
                   </div>
-                  <button onClick={() => toggleDone(active)} style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: 1.2,
-                    color: done[active] ? "#FFFFFF" : C.txtMuted,
-                    background: done[active] ? BRAND_GRAD : "transparent",
-                    padding: "10px 16px", borderRadius: 50,
-                    border: "1px solid " + (done[active] ? "transparent" : C.borderMid),
-                    cursor: "pointer", textTransform: "uppercase",
-                    whiteSpace: "nowrap", flexShrink: 0
-                  }}>{done[active] ? "✓ Complete" : "Mark Complete"}</button>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 6 }}>Video Lesson</div>
+                    <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.35 }}>
+                      Watch this lesson inside the <em style={{ color: "#2A1424", fontStyle: "italic", fontWeight: 700 }}>Skool classroom.</em>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DESC */}
+            <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txt, marginBottom: 22, fontWeight: 500 }}>
+              {lesson.desc}
+            </div>
+            <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txt, marginBottom: 36, fontWeight: 500, fontStyle: "italic" }}>
+              {lesson.desc2}
+            </div>
+
+            {/* TAKEAWAYS */}
+            <SectionHeader icon="🌙" label="Key Takeaways" color={theme === "dark" ? C.accentLt : C.accent} />
+            <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 24, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+              {lesson.takeaways.map((t, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, marginBottom: i === lesson.takeaways.length - 1 ? 0 : 16, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 14, color: C.accentLt, marginTop: 2 }}>✦</span>
+                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 500, fontSize: 16, color: C.txt, lineHeight: 1.55 }}>{t}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* ACTIONS */}
+            <SectionHeader icon="⭐" label="Your Action Steps" color={theme === "dark" ? C.accentLt : C.accent} />
+            <div style={{ marginBottom: 36 }}>
+              {lesson.actions.map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 14, marginBottom: 14, padding: 16, background: C.bgCard, borderRadius: 12, border: "1px solid " + C.border, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: BRAND_GRAD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#FFFFFF" }}>{i + 1}</div>
+                  <div style={{ fontSize: 13.5, color: C.txt, lineHeight: 1.7, fontWeight: 500 }}>{a}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* JOURNALS */}
+            {lesson.journals && (
+              <div>
+                <SectionHeader icon="🔮" label="Your Journal Practice" color={theme === "dark" ? C.accentLt : C.accent} status={saveStatus} />
+                {lesson.journals.map(j => {
+                  const entry = journals[j.id];
+                  return (
+                    <div key={j.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{j.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(j.id, ev.target.value)}
+                        placeholder="Write here. No editing. Just truth."
+                        rows={6}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                      />
+                    </div>
+                  );
+                })}
+                <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Journal" />
+              </div>
+            )}
+
+            {/* QUANTUM LETTER */}
+            {lesson.quantumLetter && (
+              <div>
+                <SectionHeader icon="💌" label="The Letter From Her" color={theme === "dark" ? C.accentLt : C.accent} status={saveStatus} />
+                {(() => {
+                  const lf = lesson.quantumLetter.letterField;
+                  const entry = journals[lf.id];
+                  return (
+                    <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.borderMid, padding: 26, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 19, color: theme === "dark" ? C.txt : C.accent, marginBottom: 8, lineHeight: 1.4 }}>{lf.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(lf.id, ev.target.value)}
+                        placeholder={lf.placeholder}
+                        rows={16}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "16px 18px", fontSize: 14, color: C.txt, lineHeight: 1.85, resize: "vertical", marginTop: 10, fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic" }}
+                      />
+                    </div>
+                  );
+                })()}
+
+                <SectionHeader icon="✨" label="Reflections on Her Letter" color={theme === "dark" ? C.accentLt : C.accent} />
+                {lesson.quantumLetter.reflectionFields.map(r => {
+                  const entry = journals[r.id];
+                  return (
+                    <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(r.id, ev.target.value)}
+                        placeholder="Write what is true."
+                        rows={4}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                      />
+                    </div>
+                  );
+                })}
+                <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Letter" />
+              </div>
+            )}
+
+            {/* IDENTITY SWAP */}
+            {lesson.identitySwap && (
+              <div>
+                <div style={{
+                  background: BRAND_GRAD,
+                  borderRadius: 14,
+                  padding: "20px 24px",
+                  marginBottom: 28,
+                  border: "1px solid rgba(255,255,255,0.25)"
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 8 }}>The Setup</div>
+                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontStyle: "italic", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.5 }}>{lesson.identitySwap.intro}</div>
                 </div>
 
-                <div style={{ height: 1, background: C.border, margin: "24px 0 32px" }} />
+                <SectionHeader icon="🔮" label="Define Your Swap" color={theme === "dark" ? C.accentLt : C.accent} status={saveStatus} />
+                {[lesson.identitySwap.areaField, lesson.identitySwap.actAsHerField, lesson.identitySwap.oldIdentityField].map(f => {
+                  const entry = journals[f.id];
+                  return (
+                    <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(f.id, ev.target.value)}
+                        placeholder={f.placeholder}
+                        rows={4}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                      />
+                    </div>
+                  );
+                })}
 
-                {/* DESC */}
-                <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txt, marginBottom: 22, fontWeight: 500 }}>
-                  {lesson.desc}
-                </div>
-                <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.txt, marginBottom: 36, fontWeight: 500, fontStyle: "italic" }}>
-                  {lesson.desc2}
+                <SectionHeader icon="⭐" label="The 7-Day Log" color={theme === "dark" ? C.accentLt : C.accent} />
+                <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 28, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                  {lesson.identitySwap.dailyLog.map((d, i) => {
+                    const entry = journals[d.id];
+                    return (
+                      <div key={d.id} style={{ marginBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, paddingBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, borderBottom: i === lesson.identitySwap.dailyLog.length - 1 ? "none" : "1px solid " + C.border }}>
+                        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: theme === "dark" ? C.accentLt : C.accent, textTransform: "uppercase", marginBottom: 8 }}>{d.label}</div>
+                        <textarea
+                          value={(entry && entry.text) || ""}
+                          onChange={(ev) => updateJournal(d.id, ev.target.value)}
+                          placeholder="One sentence. What did acting as her look like today?"
+                          rows={2}
+                          style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", fontSize: 13, color: C.txt, lineHeight: 1.65, resize: "vertical" }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* VIDEO CALLOUT for welcome */}
-                {lesson.type === "video" && (
-                  <div style={{
-                    background: BRAND_GRAD,
-                    borderRadius: 14,
-                    padding: "24px 26px",
-                    marginBottom: 36,
-                    border: "1px solid rgba(255,255,255,0.25)"
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                      <div style={{ width: 52, height: 52, minWidth: 52, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
-                        <span style={{ fontSize: 20, color: "#FFFFFF" }}>▶</span>
+                <SectionHeader icon="✨" label="Closing Reflection" color={theme === "dark" ? C.accentLt : C.accent} />
+                {lesson.identitySwap.closingReflection.map(r => {
+                  const entry = journals[r.id];
+                  return (
+                    <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(r.id, ev.target.value)}
+                        placeholder="The data is what matters. Write what is true."
+                        rows={4}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                      />
+                    </div>
+                  );
+                })}
+                <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Swap" />
+              </div>
+            )}
+
+            {/* 21-DAY TRACKER */}
+            {lesson.type === "tracker" && (
+              <div>
+                <SectionHeader icon="⭐" label="Choose Your Practice Method" color={theme === "dark" ? C.accentLt : C.accent} />
+                <div style={{ display: "grid", gap: 12, marginBottom: 32 }}>
+                  {lesson.practiceMethods.map(m => {
+                    const isSelected = selectedMethod === m.id;
+                    return (
+                      <div key={m.id} onClick={() => setSelectedMethod(m.id)} style={{
+                        background: isSelected ? "linear-gradient(135deg, rgba(110,56,101,0.22), rgba(181,123,174,0.12))" : C.bgCard,
+                        borderRadius: 14,
+                        border: "1.5px solid " + (isSelected ? C.accentLt : C.border),
+                        padding: 22,
+                        cursor: "pointer",
+                        transition: "all .2s",
+                        boxShadow: theme === "light" && isSelected ? C.shadow : "none"
+                      }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: isSelected ? BRAND_GRAD : "transparent", border: "1.5px solid " + (isSelected ? "transparent" : C.borderMid), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                            {isSelected && <span style={{ fontSize: 11, color: "#FFFFFF", fontWeight: 800 }}>✓</span>}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 18, color: C.txt, marginBottom: 6, lineHeight: 1.35 }}>{m.title}</div>
+                            <div style={{ fontSize: 13, color: C.txtMuted, lineHeight: 1.7 }}>{m.desc}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 21-DAY GRID */}
+                <SectionHeader icon="🌙" label="21-Day Tracker" color={theme === "dark" ? C.accentLt : C.accent} />
+                <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                  <div className="tracker-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 8 }}>
+                    {Array.from({ length: 21 }, (_, i) => i + 1).map(day => {
+                      const isChecked = trackerDays[day];
+                      return (
+                        <div key={day} onClick={() => toggleDay(day)} style={{
+                          aspectRatio: "1",
+                          borderRadius: 12,
+                          background: isChecked ? "linear-gradient(135deg," + MAUVE_LIGHT + "," + MAUVE_DEEP + ")" : "transparent",
+                          border: "1.5px solid " + (isChecked ? "transparent" : C.borderMid),
+                          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer",
+                          transition: "all .2s",
+                          minHeight: 56
+                        }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: isChecked ? "rgba(255,255,255,0.85)" : C.txtFaded, textTransform: "uppercase", marginBottom: 2 }}>Day</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: isChecked ? "#FFFFFF" : C.txt, fontFamily: "'Cormorant Garamond',serif" }}>{day}</div>
+                          {isChecked && <div style={{ fontSize: 10, color: "#FFFFFF", marginTop: 2 }}>✓</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid " + C.border, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg," + C.accent + "," + C.accentLt + ")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 700, color: "#FFFFFF", fontFamily: "'Cormorant Garamond',serif" }}>
+                        {Object.values(trackerDays).filter(Boolean).length}
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 6 }}>Video Lesson</div>
-                        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.35 }}>
-                          Watch the welcome video inside the <em style={{ color: "#2A1424", fontStyle: "italic", fontWeight: 700 }}>Skool classroom.</em>
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: theme === "dark" ? C.accentLt : C.accent, textTransform: "uppercase" }}>Mornings Transmitted</div>
+                        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 14, color: C.txt, marginTop: 2 }}>
+                          {Object.values(trackerDays).filter(Boolean).length === 21 ? "She is the default now." : Object.values(trackerDays).filter(Boolean).length >= 14 ? "The final week — let her arrive." : Object.values(trackerDays).filter(Boolean).length >= 7 ? "Her frequency is becoming familiar." : Object.values(trackerDays).filter(Boolean).length >= 1 ? "You have started returning to her." : "Begin tomorrow morning. Before the phone."}
                         </div>
                       </div>
                     </div>
+                    {Object.values(trackerDays).filter(Boolean).length > 0 && (
+                      <button onClick={() => { if (window.confirm("Reset all 21 days? This cannot be undone.")) setTrackerDays({}); }} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "9px 16px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>Reset Tracker</button>
+                    )}
                   </div>
-                )}
-
-                {/* TAKEAWAYS */}
-                <SectionHeader icon="🌙" label="Core Takeaways" color={C.accent} />
-                <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 24, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                  {lesson.takeaways.map((t, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: i === lesson.takeaways.length - 1 ? 0 : 16, alignItems: "flex-start" }}>
-                      <span style={{ fontSize: 14, color: C.accentLt, marginTop: 2 }}>✦</span>
-                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 500, fontSize: 16, color: C.txt, lineHeight: 1.55 }}>{t}</div>
-                    </div>
-                  ))}
                 </div>
 
-                {/* ACTIONS */}
-                <SectionHeader icon="⭐" label="Your Action Steps" color={C.accent} />
-                <div style={{ marginBottom: 36 }}>
-                  {lesson.actions.map((a, i) => (
-                    <div key={i} style={{ display: "flex", gap: 14, marginBottom: 14, padding: 16, background: C.bgCard, borderRadius: 12, border: "1px solid " + C.border, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: BRAND_GRAD, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#FFFFFF" }}>{i + 1}</div>
-                      <div style={{ fontSize: 13.5, color: C.txt, lineHeight: 1.7, fontWeight: 500 }}>{a}</div>
+                {/* WEEKLY REFLECTIONS */}
+                <SectionHeader icon="🔮" label="Weekly Reflections" color={theme === "dark" ? C.accentLt : C.accent} status={saveStatus} />
+                {lesson.trackerReflectionFields.map(f => {
+                  const entry = journals[f.id];
+                  return (
+                    <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
+                      {entry && entry.savedAt && (
+                        <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
+                      )}
+                      <textarea
+                        value={(entry && entry.text) || ""}
+                        onChange={(ev) => updateJournal(f.id, ev.target.value)}
+                        placeholder="What is true at this point in the practice?"
+                        rows={5}
+                        style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
+                      />
                     </div>
-                  ))}
+                  );
+                })}
+                <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Reflections" />
+                <div style={{ fontWeight: 500, fontSize: 11, color: C.txtFaded, lineHeight: 1.7, marginTop: 14, letterSpacing: 0.3 }}>
+                  On Day 21, carry her frequency into Module 5. The Sovereign Queen Era begins where her transmission becomes your standards.
                 </div>
-
-                {/* JOURNALS (constants, purpose, portrait) */}
-                {lesson.journals && (
-                  <div>
-                    <SectionHeader icon="🔮" label="Your Journal Practice" color={C.accent} status={saveStatus} />
-                    {lesson.journals.map(j => {
-                      const entry = journals[j.id];
-                      return (
-                        <div key={j.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{j.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(j.id, ev.target.value)}
-                            placeholder="Write here. No editing. Just truth."
-                            rows={6}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
-                          />
-                        </div>
-                      );
-                    })}
-                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Journal" />
-                  </div>
-                )}
-
-                {/* QUANTUM LETTER */}
-                {lesson.quantumLetter && (
-                  <div>
-                    <SectionHeader icon="💌" label="The Letter From Her" color={C.accent} status={saveStatus} />
-                    {(() => {
-                      const lf = lesson.quantumLetter.letterField;
-                      const entry = journals[lf.id];
-                      return (
-                        <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.borderMid, padding: 26, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 19, color: theme === "dark" ? C.txt : C.accent, marginBottom: 8, lineHeight: 1.4 }}>{lf.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(lf.id, ev.target.value)}
-                            placeholder={lf.placeholder}
-                            rows={16}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "16px 18px", fontSize: 14, color: C.txt, lineHeight: 1.85, resize: "vertical", marginTop: 10, fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic" }}
-                          />
-                        </div>
-                      );
-                    })()}
-
-                    <SectionHeader icon="✨" label="Reflections on Her Letter" color={C.accent} />
-                    {lesson.quantumLetter.reflectionFields.map(r => {
-                      const entry = journals[r.id];
-                      return (
-                        <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(r.id, ev.target.value)}
-                            placeholder="Write what is true."
-                            rows={4}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
-                          />
-                        </div>
-                      );
-                    })}
-                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Letter" />
-                  </div>
-                )}
-
-                {/* IDENTITY SWAP */}
-                {lesson.identitySwap && (
-                  <div>
-                    <div style={{
-                      background: BRAND_GRAD,
-                      borderRadius: 14,
-                      padding: "20px 24px",
-                      marginBottom: 28,
-                      border: "1px solid rgba(255,255,255,0.25)"
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, color: "#3A1E33", textTransform: "uppercase", marginBottom: 8 }}>The Setup</div>
-                      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontStyle: "italic", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.5 }}>{lesson.identitySwap.intro}</div>
-                    </div>
-
-                    <SectionHeader icon="🔮" label="Define Your Swap" color={C.accent} status={saveStatus} />
-                    {[lesson.identitySwap.areaField, lesson.identitySwap.actAsHerField, lesson.identitySwap.oldIdentityField].map(f => {
-                      const entry = journals[f.id];
-                      return (
-                        <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(f.id, ev.target.value)}
-                            placeholder={f.placeholder}
-                            rows={4}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
-                          />
-                        </div>
-                      );
-                    })}
-
-                    <SectionHeader icon="⭐" label="The 7-Day Log" color={C.accent} />
-                    <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 28, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                      {lesson.identitySwap.dailyLog.map((d, i) => {
-                        const entry = journals[d.id];
-                        return (
-                          <div key={d.id} style={{ marginBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, paddingBottom: i === lesson.identitySwap.dailyLog.length - 1 ? 0 : 18, borderBottom: i === lesson.identitySwap.dailyLog.length - 1 ? "none" : "1px solid " + C.border }}>
-                            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: C.accentLt, textTransform: "uppercase", marginBottom: 8 }}>{d.label}</div>
-                            <textarea
-                              value={(entry && entry.text) || ""}
-                              onChange={(ev) => updateJournal(d.id, ev.target.value)}
-                              placeholder="One sentence. What did acting as her look like today?"
-                              rows={2}
-                              style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", fontSize: 13, color: C.txt, lineHeight: 1.65, resize: "vertical" }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <SectionHeader icon="✨" label="Closing Reflection" color={C.accent} />
-                    {lesson.identitySwap.closingReflection.map(r => {
-                      const entry = journals[r.id];
-                      return (
-                        <div key={r.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 16, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{r.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(r.id, ev.target.value)}
-                            placeholder="The data is what matters. Write what is true."
-                            rows={4}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
-                          />
-                        </div>
-                      );
-                    })}
-                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Swap" />
-                  </div>
-                )}
-
-                {/* 21-DAY TRACKER */}
-                {lesson.type === "tracker" && (
-                  <div>
-                    <SectionHeader icon="⭐" label="Choose Your Practice Method" color={C.accent} />
-                    <div style={{ display: "grid", gap: 12, marginBottom: 32 }}>
-                      {lesson.practiceMethods.map(m => {
-                        const isSelected = selectedMethod === m.id;
-                        return (
-                          <div key={m.id} onClick={() => setSelectedMethod(m.id)} style={{
-                            background: isSelected ? "linear-gradient(135deg, rgba(110,56,101,0.22), rgba(181,123,174,0.12))" : C.bgCard,
-                            borderRadius: 14,
-                            border: "1.5px solid " + (isSelected ? C.accentLt : C.border),
-                            padding: 22,
-                            cursor: "pointer",
-                            transition: "all .2s",
-                            boxShadow: theme === "light" && isSelected ? C.shadow : "none"
-                          }}>
-                            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                              <div style={{ width: 22, height: 22, borderRadius: "50%", background: isSelected ? BRAND_GRAD : "transparent", border: "1.5px solid " + (isSelected ? "transparent" : C.borderMid), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
-                                {isSelected && <span style={{ fontSize: 11, color: "#FFFFFF", fontWeight: 800 }}>✓</span>}
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 18, color: isSelected ? C.txt : C.txtSec, marginBottom: 6, lineHeight: 1.35 }}>{m.title}</div>
-                                <div style={{ fontSize: 13, color: C.txtMuted, lineHeight: 1.7 }}>{m.desc}</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* 21-DAY GRID */}
-                    <SectionHeader icon="🌙" label="21-Day Tracker" color={C.accent} />
-                    <div style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 32, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                      <div className="tracker-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 8 }}>
-                        {Array.from({ length: 21 }, (_, i) => i + 1).map(day => {
-                          const isChecked = trackerDays[day];
-                          return (
-                            <div key={day} onClick={() => toggleDay(day)} style={{
-                              aspectRatio: "1",
-                              borderRadius: 12,
-                              background: isChecked ? "linear-gradient(135deg," + MAUVE_LIGHT + "," + MAUVE_DEEP + ")" : "transparent",
-                              border: "1.5px solid " + (isChecked ? "transparent" : C.borderMid),
-                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                              cursor: "pointer",
-                              transition: "all .2s",
-                              minHeight: 56
-                            }}>
-                              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: isChecked ? "rgba(255,255,255,0.85)" : C.txtFaded, textTransform: "uppercase", marginBottom: 2 }}>Day</div>
-                              <div style={{ fontSize: 18, fontWeight: 700, color: isChecked ? "#FFFFFF" : C.txtMuted, fontFamily: "'Cormorant Garamond',serif" }}>{day}</div>
-                              {isChecked && <div style={{ fontSize: 10, color: "#FFFFFF", marginTop: 2 }}>✓</div>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid " + C.border, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg," + C.accent + "," + C.accentLt + ")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 700, color: "#FFFFFF", fontFamily: "'Cormorant Garamond',serif" }}>
-                            {Object.values(trackerDays).filter(Boolean).length}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.accent, textTransform: "uppercase" }}>Mornings Transmitted</div>
-                            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: 14, color: C.txt, marginTop: 2 }}>
-                              {Object.values(trackerDays).filter(Boolean).length === 21 ? "She is the default now." : Object.values(trackerDays).filter(Boolean).length >= 14 ? "The final week — let her arrive." : Object.values(trackerDays).filter(Boolean).length >= 7 ? "Her frequency is becoming familiar." : Object.values(trackerDays).filter(Boolean).length >= 1 ? "You have started returning to her." : "Begin tomorrow morning. Before the phone."}
-                            </div>
-                          </div>
-                        </div>
-                        {Object.values(trackerDays).filter(Boolean).length > 0 && (
-                          <button onClick={() => { if (window.confirm("Reset all 21 days? This cannot be undone.")) setTrackerDays({}); }} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "9px 16px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>Reset Tracker</button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* WEEKLY REFLECTIONS */}
-                    <SectionHeader icon="🔮" label="Weekly Reflections" color={C.accent} status={saveStatus} />
-                    {lesson.trackerReflectionFields.map(f => {
-                      const entry = journals[f.id];
-                      return (
-                        <div key={f.id} style={{ background: C.bgCard, borderRadius: 14, border: "1px solid " + C.border, padding: 22, marginBottom: 14, boxShadow: theme === "light" ? C.shadow : "none" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontWeight: 700, fontSize: 17, color: theme === "dark" ? C.txt : C.accent, marginBottom: 6, lineHeight: 1.4 }}>{f.prompt}</div>
-                          {entry && entry.savedAt && (
-                            <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>Last saved {new Date(entry.savedAt).toLocaleString()}</div>
-                          )}
-                          <textarea
-                            value={(entry && entry.text) || ""}
-                            onChange={(ev) => updateJournal(f.id, ev.target.value)}
-                            placeholder="What is true at this point in the practice?"
-                            rows={5}
-                            style={{ width: "100%", background: C.inputBg, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: C.txt, lineHeight: 1.75, resize: "vertical", marginTop: 8 }}
-                          />
-                        </div>
-                      );
-                    })}
-                    <SaveExportButtons onSave={saveLessonJournals} onExport={() => exportLesson(lesson)} C={C} saveLabel="✦ Save Reflections" />
-                    <div style={{ fontWeight: 500, fontSize: 11, color: C.txtFaded, lineHeight: 1.7, marginTop: 14, letterSpacing: 0.3 }}>
-                      On Day 21, carry her frequency into Module 5. The Sovereign Queen Era begins where her transmission becomes your standards.
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ marginTop: 44, paddingTop: 28, borderTop: "1px solid " + C.border, display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center" }} className="lesson-bottom">
-                  {active > 0 ? (
-                    <button onClick={() => setActive(active - 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "12px 22px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>← Previous</button>
-                  ) : <span />}
-                  {active < MODULE_DATA.lessons.length - 1 && (
-                    <button onClick={() => setActive(active + 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.moonPrl, background: "linear-gradient(135deg," + C.accent + "," + C.darkMid + ")", padding: "13px 24px", borderRadius: 50, border: "none", cursor: "pointer", textTransform: "uppercase" }}>Next Lesson →</button>
-                  )}
-                </div>
-
-                <div style={{ marginTop: 56, paddingTop: 28, borderTop: "1px solid " + C.border, textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontStyle: "italic", color: theme === "dark" ? C.accentLt : C.accent, marginBottom: 6 }}>You are the alchemy.</div>
-                  <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 2, textTransform: "uppercase" }}>Badass Alchemy · Baddie Society · Quantum Queen</div>
-                </div>
-
               </div>
-            );
-          })()}
+            )}
+
+            <div style={{ marginTop: 44, paddingTop: 28, borderTop: "1px solid " + C.border, display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center" }} className="lesson-bottom">
+              {active > 0 ? (
+                <button onClick={() => setActive(active - 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.txtMuted, background: "transparent", padding: "12px 22px", borderRadius: 50, border: "1px solid " + C.borderMid, cursor: "pointer", textTransform: "uppercase" }}>← Previous</button>
+              ) : <span />}
+              {active < MODULE_DATA.lessons.length - 1 && (
+                <button onClick={() => setActive(active + 1)} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: C.moonPrl, background: "linear-gradient(135deg," + C.accent + "," + C.darkMid + ")", padding: "13px 24px", borderRadius: 50, border: "none", cursor: "pointer", textTransform: "uppercase" }}>Next Lesson →</button>
+              )}
+            </div>
+
+            <div style={{ marginTop: 56, paddingTop: 28, borderTop: "1px solid " + C.border, textAlign: "center" }}>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontStyle: "italic", color: theme === "dark" ? C.accentLt : C.accent, marginBottom: 6 }}>You are the alchemy.</div>
+              <div style={{ fontSize: 8, fontWeight: 700, color: C.txtFaded, letterSpacing: 2, textTransform: "uppercase" }}>Badass Alchemy · Baddie Society · Quantum Queen</div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -925,7 +842,6 @@ function SaveExportButtons({ onSave, onExport, C, saveLabel }) {
   );
 }
 
-// Mount
 document.getElementById('loading').style.display = 'none';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
